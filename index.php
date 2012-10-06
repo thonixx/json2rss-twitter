@@ -2,11 +2,27 @@
 	
 	// JSON 2 RSS (twitter search api) converter
 	// scripted by Michael Tanner
+	//
+	// https://github.com/thonixx/json2rss-twitter
+	//
+	// License: CC-BY-SA
+	// https://creativecommons.org/licenses/by-sa/3.0/ch/
+	//
+    //////////////////////////////////////
+    
+    
 	
-	//header("Content-Type: application/rss+xml; charset=utf-8");
-	
+	//////////////////////////////
+	////// EDIT THIS TO YOUR NEEDS
 	// define what to search
 	$tweetsearch = 'haekelschwein%20pic.twitter.com%20-from:haekelschwein%20-RT';
+	// where to save the final rss
+	$rssfile = 'haekelschwein.rss';
+	///////////////////////////////
+	
+	// set right header (content type things)
+	header("Content-Type: application/rss+xml; charset=utf-8");
+	
 	// twitter search api url
 	$json_url = 'http://search.twitter.com/search.json?q='.$tweetsearch.'&result_type=recent&count=50';
 	// get the results
@@ -15,7 +31,6 @@
 	$twitter_array = json_decode($json, true);
 	// all results in one array
 	$results = $twitter_array['results'];
-	
 	
 	// publishing date (actual refresh time)
 	$pubDate = date('r');
@@ -32,8 +47,9 @@
 			<pubDate>$pubDate</pubDate>
 			<lastBuildDate>$pubDate</lastBuildDate>";
 	
+	// loop through all search results
 	foreach($results as $r) {
-		// loop through all search results
+		// was too lazy to change from curtweet to r variable
 		$curTweet = $r;
 
 		// get image url in tweet
@@ -41,7 +57,7 @@
 		preg_match("/(http)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?/", $tweet, $url);
 		$url = $url[0];
 
-		// get tweet text
+		// get tweet text and replace the url to disappear (for beauty)
 		$text = trim(str_replace($url, '', $tweet));
 
 		// get tweet time
@@ -58,11 +74,12 @@
 		$tweetjson = file_get_contents($status_api);
 		// decode json string
 		$tweet_array = json_decode($tweetjson, true);
-		// all results in one array
+		// just take the pic.twitter.com url to the image
 		$pictwittercom = $tweet_array['entities']['media'][0]['media_url'];
-
+		
+		// build rss item
 		$rss .= "<item>
-				<title>$text</title>
+				<title>$username: $text</title>
 				<guid isPermaLink=\"true\">$statusUrl</guid>
 				<link>$statusUrl</link>
 				<pubDate>$time</pubDate>
@@ -70,9 +87,11 @@
 				<media:content type=\"image/jpeg\" url=\"$pictwittercom\"/>
 			</item>";
 	}
+	// some rss ending stuff
 	$rss .= "</channel>
 	</rss>";
 	
-	file_put_contents('haekelschwein.rss', $rss)
+	// now write the stuff to the rss feed
+	file_put_contents($rssfile, $rss)
 
 ?>

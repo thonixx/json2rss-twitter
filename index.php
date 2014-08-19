@@ -10,7 +10,6 @@
 	//
         //////////////////////////////////////
     
-    
 	
 	//////////////////////////////
 	////// EDIT THIS TO YOUR NEEDS
@@ -20,17 +19,30 @@
 	$rssfile = 'haekelschwein.rss';
 	///////////////////////////////
 	
+	// authentication
+	require_once('twitter-api-php/TwitterAPIExchange.php');
+	// auth config
+	require_once('auth_config.php');
+	
 	// set right header (content type things)
 	header("Content-Type: application/rss+xml; charset=utf-8");
 	
 	// twitter search api url
-	$json_url = 'http://search.twitter.com/search.json?q='.$tweetsearch.'&result_type=recent&count=50';
-	// get the results
-	$json = file_get_contents($json_url);
+	// $json_url = 'http://search.twitter.com/search.json?q='.$tweetsearch.'&result_type=recent&count=50'; // deactivated
+	$json_url = 'https://api.twitter.com/1.1/search/tweets.json';
+	$getfield = '?q='.$tweetsearch.'&result_type=recent&count=50';
+	// html method
+	$requestMethod = 'GET';
+	// authenticate and get the results
+	$twitter = new TwitterAPIExchange($settings);
+	$json = $twitter->setGetfield($getfield)
+		     ->buildOauth($json_url, $requestMethod)
+		     ->performRequest();
 	// decode json string
 	$twitter_array = json_decode($json, true);
+	// die(var_dump($twitter_array));
 	// all results in one array
-	$results = $twitter_array['results'];
+	$results = $twitter_array['statuses'];
 	
 	// publishing date (actual refresh time)
 	$pubDate = date('r');
@@ -54,28 +66,18 @@
 
 		// get image url in tweet
 		$tweet = $curTweet['text'];
-		preg_match("/(http)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?/", $tweet, $url);
-		$url = $url[0];
-
-		// get tweet text and replace the url to disappear (for beauty)
-		$text = trim(str_replace($url, '', $tweet));
+		$text = preg_replace("/(http)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?/", '', $tweet);
 
 		// get tweet time
 		$time = $curTweet['created_at'];
 
 		// status url
-		$username = $curTweet['from_user'];
+		$username = $curTweet['user']['screen_name'];
 		$statusid = $curTweet['id'];
-		$statusUrl = "https://twitter.com/$username/status/$statusid/";
+		$statusUrl = "https://twitter.com/$username/status/$statusid";
 
-		// twitter status api
-		$status_api = "https://api.twitter.com/1/statuses/show.json?id=$statusid&include_entities=true";
-		// get the results
-		$tweetjson = file_get_contents($status_api);
-		// decode json string
-		$tweet_array = json_decode($tweetjson, true);
 		// just take the pic.twitter.com url to the image
-		$pictwittercom = $tweet_array['entities']['media'][0]['media_url'];
+		$pictwittercom = $curTweet['entities']['media'][0]['media_url'];
 		
 		// build rss item
 		$rss .= "<item>
@@ -89,7 +91,7 @@
 	}
 	// some rss ending stuff
 	$rss .= "</channel>
-	</rss>";
+</rss>";
 	
 	// now write the stuff to the rss feed
 	file_put_contents($rssfile, $rss)

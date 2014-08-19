@@ -94,6 +94,9 @@
 </rss>";
 	
 	// now write the stuff to the rss feed
-	file_put_contents($rssfile, $rss)
+	file_put_contents($rssfile, $rss);
+
+	// redirect to rss
+	header('Location: http://project.pixelwolf.ch/json2rss/haekelschwein.rss');
 
 ?>

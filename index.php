@@ -76,9 +76,16 @@
 		$statusid = $curTweet['id'];
 		$statusUrl = "https://twitter.com/$username/status/$statusid";
 
-		// just take the pic.twitter.com url to the image
-		$pictwittercom = $curTweet['entities']['media'][0]['media_url'];
-		
+		if (!empty($curTweet['entities']['media']) && count($curTweet['entities']['media']) > 0) {
+			// var_dump($curTweet['entities']['media']); // debug
+			foreach($curTweet['entities']['media'] as $media_item) {
+				if(preg_match('/^https:\/\/pbs\.twimg.com\/media\/.*.jpg$/', $media_item['media_url_https'])) {
+					// just take the twitter picture url to the image
+					// take the last one since only one picture is supported
+					$pictwittercom = $media_item['media_url_https'];
+				}
+			}
+
 		// build rss item
 		$rss .= "<item>
 				<title>$username: $text</title>
@@ -88,6 +95,7 @@
 				<description>$text &lt;img src=&quot;$pictwittercom&quot; /&gt;</description>
 				<media:content type=\"image/jpeg\" url=\"$pictwittercom\"/>
 			</item>";
+		}
 	}
 	// some rss ending stuff
 	$rss .= "</channel>

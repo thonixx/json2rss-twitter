@@ -44,7 +44,7 @@
 	$twitter_array = json_decode($json, true);
 	// die(var_dump($twitter_array));
 	// all results in one array
-	if(count($twitter_array['statuses']) >= 1) {
+	if($twitter_array['statuses'] and count($twitter_array['statuses']) >= 1) {
 		$results = $twitter_array['statuses'];
 
 		// publishing date (actual refresh time)
